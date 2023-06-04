@@ -10,7 +10,7 @@ router.get('/login',(req,res) =>{
 router.post('/login',
  passport.authenticate('local', {
   successRedirect: '/',
-  failureRedirect: '/users/login'
+  failureRedirect: '/users/login',
  })
 )
 
@@ -22,15 +22,31 @@ router.get('/register',(req,res) =>{
 
 router.post('/register',(req,res) =>{
   const {name , email , password , confirmPassword} = req.body
+  const errors =[]
+  if(!name || !email || !password || !confirmPassword){
+    errors.push({message:'所有欄位都是必填'})
+  }
+  if(password !== confirmPassword){
+    errors.push({message:'密碼與確認密碼不相符'})
+  }
+  if(errors.length){
+    return res.render('register',{
+      errors,
+      name,
+      email,
+      password,
+      confirmPassword
+    })
+  }
   User.findOne({ email }).then(user => {
     if(user) {
-      console.log("This email is already registered")
+      errors.push({message:'這個Email已經註冊過了'})
       return res.render('register' , {
+        errors,
         name, 
         email, 
         password, 
-        confirmPassword,
-        message: "此email已經註冊過了"
+        confirmPassword
       })
     }else{
       return User.create({
@@ -47,6 +63,7 @@ router.post('/register',(req,res) =>{
 
 router.get('/logout',(req, res) => {
   req.logout()  // req.logout 是passport.js提供的函式，會自動把使用者登入狀態清掉，幫你清除session
+  req.flash('success_msg','你已經成功登出')
   res.redirect('/users/login')
 })
 
